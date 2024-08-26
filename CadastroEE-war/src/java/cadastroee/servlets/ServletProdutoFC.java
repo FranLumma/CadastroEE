@@ -29,89 +29,100 @@ public class ServletProdutoFC extends HttpServlet {
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
-    
     @EJB
     ProdutoFacadeLocal facade;
-    
+
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         String acao = request.getParameter("acao");
-        if(acao == null)
+        if (acao == null) {
             throw new jakarta.servlet.ServletException("Parâmetro Requerido");
-            
+        }
+
         String destino = (acao.equals("formAlterar") || acao.equals("formIncluir")) ? "ProdutoDados.jsp" : "ProdutoLista.jsp";
         List<Produto> produtos = null;
-
-            switch(acao){
+        try {
+            switch (acao) {
                 case "listar":
                     produtos = (List<Produto>) facade.findAll();
                     request.setAttribute("produtos", produtos);
                     break;
-                
+
                 case "formAlterar":
                     int id = Integer.parseInt(request.getParameter("id"));
-                    Produto produto = facade.find(id);
-                    request.setAttribute("produto", produto);
+                    try {
+                        Produto produto = facade.find(id);
+                        request.setAttribute("produto", produto);
+                    } catch (Exception e) {
+                        System.out.println("Erro:" + e);
+                    }
                     break;
-                
+
                 case "excluir":
                     int id_ex = Integer.parseInt(request.getParameter("id"));
                     Produto produto_ex = facade.find(id_ex);
-                    facade.remove(produto_ex);
-                    System.out.println("@@@Excluindo@@@");
+                    try {
+                        facade.remove(produto_ex);
+                    } catch (Exception e) {
+                        System.out.println("Erro ao remover:" + e);
+                    }
                     produtos = (List<Produto>) facade.findAll();
                     request.setAttribute("produtos", produtos);
                     break;
-                
+
                 case "alterar":
                     int id_al = Integer.parseInt(request.getParameter("id"));
                     Produto produto_alterar = facade.find(id_al);
                     String nomeAlterar = request.getParameter("nome");
                     int quantidadeAlterar = Integer.parseInt(request.getParameter("quantidade"));
                     Float precoAlterar = Float.parseFloat(request.getParameter("precoVenda"));
-                    
+
                     produto_alterar.setNome(nomeAlterar);
                     produto_alterar.setQuantidade(quantidadeAlterar);
                     produto_alterar.setPrecoVenda(precoAlterar);
-                    {
-                        try{
+                    try {
                         facade.edit(produto_alterar);
-                        }catch(Exception e ){System.out.println("Erro ao alterar:" + e);}
+                    } catch (Exception e) {
+                        System.out.println("Erro ao alterar:" + e);
                     }
                     produtos = (List<Produto>) facade.findAll();
                     request.setAttribute("produtos", produtos);
                     break;
-                
+
                 case "incluir":
                     String nomeIncluir = request.getParameter("nome");
                     int quantidadeIncluir = Integer.parseInt(request.getParameter("quantidade"));
                     Float precoIncluir = Float.parseFloat(request.getParameter("precoVenda"));
-                    
+
                     Produto novoProduto = new Produto();
                     novoProduto.setNome(nomeIncluir);
                     novoProduto.setQuantidade(quantidadeIncluir);
                     novoProduto.setPrecoVenda(precoIncluir);
-                    {
-                        try{
-                            facade.create(novoProduto);
-                        }catch(Exception e){System.out.println("Erro ao cadastrar: " + e);}
+                    try {
+                        facade.create(novoProduto);
+                    } catch (Exception e) {
+                        System.out.println("Erro ao cadastrar: " + e);
                     }
                     produtos = (List<Produto>) facade.findAll();
                     request.setAttribute("produtos", produtos);
                     break;
-                    
+
                 default:
                     produtos = (List<Produto>) facade.findAll();
                     request.setAttribute("produtos", produtos);
             }
-            /**if(!acao.equals("incluir")){
-                request.setAttribute("produtos", produtos);
-            }**/
-            if (!destino.isEmpty()) {
-                RequestDispatcher rd = request.getRequestDispatcher(destino);
-                rd.forward(request, response);
-            }
+        } catch (Exception e) {
+            System.out.println("Erro: " + e);
+        }
+        /**
+         * if(!acao.equals("incluir")){ request.setAttribute("produtos",
+         * produtos); }*
+         */
+        if (!destino.isEmpty()) {
+            RequestDispatcher rd = request.getRequestDispatcher(destino);
+            rd.forward(request, response);
+        }
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
